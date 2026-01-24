@@ -1,8 +1,17 @@
 package com.joaopaulo.usuario.infrastructure.business.dto;
 
-import lombok.Builder;
+import lombok.*;
 
 import java.util.List;
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public record UsuarioDTO(String nome, String email, String senha, List<EnderecoDTO> endereco, List<TelefoneDTO> telefones) {
+public class UsuarioDTO {
+    private String nome;
+    private String email;
+    private String senha;
+    private List<EnderecoDTO> enderecos;
+    private List<TelefoneDTO> telefones;
 }
