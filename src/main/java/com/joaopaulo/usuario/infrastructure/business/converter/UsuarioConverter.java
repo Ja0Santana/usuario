@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
 public class UsuarioConverter {
     public Usuario paraUsuario(UsuarioDTO usuarioDTO) {
         return Usuario.builder()
-                .nome(usuarioDTO.nome())
-                .email(usuarioDTO.email())
-                .senha(usuarioDTO.senha())
-                .enderecos(paraListaEndereco(usuarioDTO.endereco()))
-                .telefones(paraListaTelefones(usuarioDTO.telefones()))
+                .nome(usuarioDTO.getNome())
+                .email(usuarioDTO.getEmail())
+                .senha(usuarioDTO.getSenha())
+                .enderecos(paraListaEndereco(usuarioDTO.getEnderecos()))
+                .telefones(paraListaTelefones(usuarioDTO.getTelefones()))
                 .build();
     }
 
@@ -56,7 +56,7 @@ public class UsuarioConverter {
                 .nome(usuarioDTO.getNome())
                 .email(usuarioDTO.getEmail())
                 .senha(usuarioDTO.getSenha())
-                .endereco(paraListaEnderecoDTO(usuarioDTO.getEnderecos()))
+                .enderecos(paraListaEnderecoDTO(usuarioDTO.getEnderecos()))
                 .telefones(paraListaTelefonesDTO(usuarioDTO.getTelefones()))
                 .build();
     }
