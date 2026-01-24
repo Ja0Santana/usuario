@@ -10,13 +10,14 @@ import lombok.*;
 @ToString
 @Entity
 @Table(name = "endereco")
+@Builder
 public class Endereco {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "rua")
     private String rua;
-    @Column(name = "numero")
+    @Column(name = "telefones")
     private Long numero;
     @Column(name = "complemento", length = 50)
     private String complemento;
