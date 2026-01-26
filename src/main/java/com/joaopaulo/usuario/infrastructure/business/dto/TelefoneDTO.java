@@ -1,7 +1,14 @@
 package com.joaopaulo.usuario.infrastructure.business.dto;
 
-import lombok.Builder;
+import lombok.*;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public record TelefoneDTO(String numero, String ddd) {
+public class TelefoneDTO {
+    private Long id;
+    private String numero;
+    private String ddd;
 }
