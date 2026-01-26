@@ -6,6 +6,7 @@ import com.joaopaulo.usuario.infrastructure.business.dto.UsuarioDTO;
 import com.joaopaulo.usuario.infrastructure.entitiy.Endereco;
 import com.joaopaulo.usuario.infrastructure.entitiy.Telefone;
 import com.joaopaulo.usuario.infrastructure.entitiy.Usuario;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -13,6 +14,12 @@ import java.util.stream.Collectors;
 
 @Component
 public class UsuarioConverter {
+    private final PasswordEncoder passwordEncoder;
+
+    public UsuarioConverter(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
     public Usuario paraUsuario(UsuarioDTO usuarioDTO) {
         return Usuario.builder()
                 .nome(usuarioDTO.getNome())
@@ -84,6 +91,17 @@ public class UsuarioConverter {
         return TelefoneDTO.builder()
                 .numero(telefoneDTO.getNumero())
                 .ddd(telefoneDTO.getDdd())
+                .build();
+    }
+
+    public Usuario updateUsuario(UsuarioDTO usuarioDTO, Usuario usuarioEntity) {
+        return Usuario.builder()
+                .nome(usuarioDTO.getNome() != null ? usuarioDTO.getNome() : usuarioEntity.getNome())
+                .id(usuarioEntity.getId())
+                .email(usuarioDTO.getEmail() != null ? usuarioDTO.getEmail() : usuarioEntity.getEmail())
+                .senha(usuarioDTO.getSenha() != null ? usuarioDTO.getSenha() : usuarioEntity.getSenha())
+                .enderecos(usuarioEntity.getEnderecos())
+                .telefones(usuarioEntity.getTelefones())
                 .build();
     }
 }
