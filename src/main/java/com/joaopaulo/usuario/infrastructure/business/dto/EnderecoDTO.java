@@ -1,7 +1,18 @@
 package com.joaopaulo.usuario.infrastructure.business.dto;
 
-import lombok.Builder;
+import lombok.*;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public record EnderecoDTO(String rua, Long numero, String complemento, String cidade, String estado, String cep) {
+public class EnderecoDTO {
+    private Long id;
+    private String rua;
+    private Long numero;
+    private String cidade;
+    private String complemento;
+    private String cep;
+    private String estado;
 }

@@ -1,6 +1,8 @@
 package com.joaopaulo.usuario.infrastructure.controller;
 
 import com.joaopaulo.usuario.infrastructure.business.UsuarioService;
+import com.joaopaulo.usuario.infrastructure.business.dto.EnderecoDTO;
+import com.joaopaulo.usuario.infrastructure.business.dto.TelefoneDTO;
 import com.joaopaulo.usuario.infrastructure.business.dto.UsuarioDTO;
 import com.joaopaulo.usuario.infrastructure.entitiy.Usuario;
 import com.joaopaulo.usuario.infrastructure.security.JwtUtil;
@@ -33,7 +35,7 @@ public class UsuarioController {
     }
 
     @GetMapping
-    public ResponseEntity<Usuario> buscarUsuarioPorEmail(@RequestParam("email") String email) {
+    public ResponseEntity<UsuarioDTO> buscarUsuarioPorEmail(@RequestParam("email") String email) {
         return ResponseEntity.ok(usuarioService.buscarUsuarioPorEmail(email));
     }
 
@@ -41,5 +43,20 @@ public class UsuarioController {
     public ResponseEntity<Void> deletarUsuarioPorEmail(@PathVariable String email) {
         usuarioService.deletarUsuarioPorEmail(email);
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping
+    public ResponseEntity<UsuarioDTO> atualizarUsuario(@RequestBody UsuarioDTO usuarioDTO, @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(usuarioService.atualizaDadosUsuario(token, usuarioDTO));
+    }
+
+    @PutMapping("/endereco")
+    public ResponseEntity<EnderecoDTO> autalizarEnderecoUsuario(@RequestBody EnderecoDTO enderecoDTO, @RequestParam("id") Long id) {
+        return ResponseEntity.ok(usuarioService.atualizarEndereco(id, enderecoDTO));
+    }
+
+    @PutMapping("/telefone")
+    public ResponseEntity<TelefoneDTO> autalizarTelefoneUsuario(@RequestBody TelefoneDTO telefoneDTO, @RequestParam("id") Long idTelefone) {
+        return ResponseEntity.ok(usuarioService.atualizarTelefone(idTelefone, telefoneDTO));
     }
 }
