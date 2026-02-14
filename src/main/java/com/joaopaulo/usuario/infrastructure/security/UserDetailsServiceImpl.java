@@ -5,6 +5,7 @@ package com.joaopaulo.usuario.infrastructure.security;
 import com.joaopaulo.usuario.infrastructure.entitiy.Usuario;
 import com.joaopaulo.usuario.infrastructure.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -25,7 +26,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
 
         // Cria e retorna um objeto UserDetails com base no usuário encontrado
-        return org.springframework.security.core.userdetails.User
+        return User
                 .withUsername(usuario.getEmail()) // Define o nome de usuário como o e-mail
                 .password(usuario.getSenha()) // Define a senha do usuário
                 .build(); // Constrói o objeto UserDetails
