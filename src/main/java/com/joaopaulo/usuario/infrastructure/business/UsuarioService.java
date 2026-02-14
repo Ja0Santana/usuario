@@ -1,9 +1,9 @@
 package com.joaopaulo.usuario.infrastructure.business;
 
 import com.joaopaulo.usuario.infrastructure.business.converter.UsuarioConverter;
-import com.joaopaulo.usuario.infrastructure.business.dto.EnderecoDTO;
-import com.joaopaulo.usuario.infrastructure.business.dto.TelefoneDTO;
-import com.joaopaulo.usuario.infrastructure.business.dto.UsuarioDTO;
+import com.joaopaulo.usuario.infrastructure.business.dto.out.EnderecoDTO;
+import com.joaopaulo.usuario.infrastructure.business.dto.out.TelefoneDTO;
+import com.joaopaulo.usuario.infrastructure.business.dto.out.UsuarioDTO;
 import com.joaopaulo.usuario.infrastructure.entitiy.Endereco;
 import com.joaopaulo.usuario.infrastructure.entitiy.Telefone;
 import com.joaopaulo.usuario.infrastructure.entitiy.Usuario;

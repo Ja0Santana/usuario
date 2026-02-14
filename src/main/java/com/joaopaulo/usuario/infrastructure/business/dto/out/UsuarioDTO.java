@@ -1,4 +1,4 @@
-package com.joaopaulo.usuario.infrastructure.business.dto;
+package com.joaopaulo.usuario.infrastructure.business.dto.out;
 
 import lombok.*;
 
