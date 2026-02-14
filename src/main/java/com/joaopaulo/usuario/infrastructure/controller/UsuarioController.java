@@ -1,12 +1,15 @@
 package com.joaopaulo.usuario.infrastructure.controller;
 
 import com.joaopaulo.usuario.infrastructure.business.UsuarioService;
-import com.joaopaulo.usuario.infrastructure.business.dto.EnderecoDTO;
-import com.joaopaulo.usuario.infrastructure.business.dto.TelefoneDTO;
-import com.joaopaulo.usuario.infrastructure.business.dto.UsuarioDTO;
+import com.joaopaulo.usuario.infrastructure.business.dto.in.LoginDTORequest;
+import com.joaopaulo.usuario.infrastructure.business.dto.out.EnderecoDTO;
+import com.joaopaulo.usuario.infrastructure.business.dto.out.TelefoneDTO;
+import com.joaopaulo.usuario.infrastructure.business.dto.out.UsuarioDTO;
 import com.joaopaulo.usuario.infrastructure.security.JwtUtil;
+import com.joaopaulo.usuario.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/usuario")
 @RequiredArgsConstructor
 @Tag(name = "Usuario", description = "Endpoints para criação e gerenciamento de usuários")
+@SecurityRequirement(name = SecurityConfig.SECURITY_SCHEME)
 public class UsuarioController {
     private final UsuarioService usuarioService;
     private final AuthenticationManager authenticationManager;
@@ -39,9 +43,9 @@ public class UsuarioController {
     @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
     @ApiResponse(responseCode = "403", description = "Usuário não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
-    public String login(@RequestBody UsuarioDTO usuarioDTO) {
+    public String login(@RequestBody LoginDTORequest loginDTORequest) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(usuarioDTO.getEmail(), usuarioDTO.getSenha())
+                new UsernamePasswordAuthenticationToken(loginDTORequest.getEmail(), loginDTORequest.getSenha())
         );
         return "Bearer " + jwtutil.generateToken(authentication.getName());
     }
