@@ -3,6 +3,8 @@ package com.joaopaulo.usuario.infrastructure.entitiy;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -11,7 +13,7 @@ import lombok.*;
 @Entity
 @Table(name = "endereco")
 @Builder
-public class Endereco {
+public class Endereco implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
