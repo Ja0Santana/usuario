@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${posgres_db}
+      SPRING_DATASOURCE_USERNAME: ${posgres_user}
+      SPRING_DATASOURCE_PASSWORD: ${posgres_pass}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${posgres_user}
+      POSTGRES_USER: ${posgres_user}
+      POSTGRES_PASSWORD: ${posgres_pass}
+    ports:
+      - "5432:5432"

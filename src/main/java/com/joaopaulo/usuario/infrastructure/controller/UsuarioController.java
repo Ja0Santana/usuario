@@ -17,8 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -48,11 +46,8 @@ public class UsuarioController {
     @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
     @ApiResponse(responseCode = "403", description = "Usuário não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
-    public String login(@RequestBody LoginDTORequest loginDTORequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTORequest.getEmail(), loginDTORequest.getSenha())
-        );
-        return "Bearer " + jwtutil.generateToken(authentication.getName());
+    public ResponseEntity<String> login(@RequestBody LoginDTORequest loginDTORequest) {
+        return ResponseEntity.ok(usuarioService.autenticarUsuario(loginDTORequest));
     }
 
     @GetMapping

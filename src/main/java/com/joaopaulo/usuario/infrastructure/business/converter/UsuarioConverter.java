@@ -11,11 +11,9 @@ import com.joaopaulo.usuario.infrastructure.entitiy.Endereco;
 import com.joaopaulo.usuario.infrastructure.entitiy.Telefone;
 import com.joaopaulo.usuario.infrastructure.entitiy.Usuario;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
@@ -32,7 +30,7 @@ public class UsuarioConverter {
     }
 
     public List<Endereco> paraListaEndereco(List<EnderecoDTOrequest> enderecoDTOrequests) {
-        return enderecoDTOrequests.stream().map(this::paraEndereco).collect(Collectors.toList());
+        return enderecoDTOrequests.stream().map(this::paraEndereco).toList();
     }
 
     public Endereco paraEndereco(EnderecoDTOrequest enderecoDTOrequest) {
@@ -48,7 +46,7 @@ public class UsuarioConverter {
     }
 
     public List<Telefone> paraListaTelefones(List<TelefoneDTOrequest> telefoneDTOrequests) {
-        return telefoneDTOrequests.stream().map(this::paraTelefone).collect(Collectors.toList());
+        return telefoneDTOrequests.stream().map(this::paraTelefone).toList();
     }
 
     public Telefone paraTelefone(TelefoneDTOrequest telefoneDTOrequest) {
@@ -72,7 +70,7 @@ public class UsuarioConverter {
     }
 
     public List<EnderecoDTOResponse> paraListaEnderecoDTO(List<Endereco> endereco) {
-        return endereco.stream().map(this::paraEnderecoDTO).collect(Collectors.toList());
+        return endereco.stream().map(this::paraEnderecoDTO).toList();
     }
 
     public EnderecoDTOResponse paraEnderecoDTO(Endereco endereco) {
@@ -88,7 +86,7 @@ public class UsuarioConverter {
     }
 
     public List<TelefoneDTOResponse> paraListaTelefonesDTO(List<Telefone> telefone) {
-        return telefone.stream().map(this::paraTelefoneDTO).collect(Collectors.toList());
+        return telefone.stream().map(this::paraTelefoneDTO).toList();
     }
 
     public TelefoneDTOResponse paraTelefoneDTO(Telefone telefone) {
