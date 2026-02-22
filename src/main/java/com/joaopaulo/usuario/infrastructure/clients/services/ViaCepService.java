@@ -16,11 +16,11 @@ public class ViaCepService {
     }
 
     public String processarCep(String cep) {
-        if (cep == null || !cep.matches("[0-9]+")) {
+        if (cep == null || !cep.matches("\\d+")) {
             throw new IllegalArgumentException("CEP invalido, verifique as informações e tente novamente");
         }
 
-        String cepFormatado = cep.replaceAll("[^0-9]", "");
+        String cepFormatado = cep.replaceAll("\\D", "");
 
         if (cepFormatado.length() != 8) {
             throw new IllegalArgumentException("CEP invalido, verifique as informações e tente novamente");
