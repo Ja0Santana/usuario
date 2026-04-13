@@ -9,9 +9,9 @@ import com.joaopaulo.usuario.infrastructure.entitiy.Endereco;
 import com.joaopaulo.usuario.infrastructure.entitiy.Telefone;
 import com.joaopaulo.usuario.infrastructure.entitiy.Usuario;
 import com.joaopaulo.usuario.infrastructure.exceptions.ConflictException;
-import com.joaopaulo.usuario.infrastructure.exceptions.IllegalArgumentException;
 import com.joaopaulo.usuario.infrastructure.exceptions.ResourceNotFoundException;
 import com.joaopaulo.usuario.infrastructure.exceptions.UnauthorizedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.joaopaulo.usuario.infrastructure.repository.EnderecoRepository;
 import com.joaopaulo.usuario.infrastructure.repository.TelefoneRepository;
 import com.joaopaulo.usuario.infrastructure.repository.UsuarioRepository;
@@ -19,11 +19,9 @@ import com.joaopaulo.usuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -59,13 +57,8 @@ public class UsuarioService {
         }
     }
 
-    public void emailExiste (String email) {
-        try {
-            boolean existe = verificarEmailExistente(email);
-            if (existe) {
-                throw new ConflictException("Email já cadastrado: " + email);
-            }
-        } catch (ConflictException e) {
+    public void emailExiste(String email) {
+        if (verificarEmailExistente(email)) {
             throw new ConflictException("Email já cadastrado: " + email);
         }
     }
@@ -75,15 +68,21 @@ public class UsuarioService {
     }
 
     public UsuarioDTOResponse buscarUsuarioPorEmail(String email) {
-        try {
-            return usuarioConverter.paraUsuarioDTO(usuarioRepository.findByEmail(email).orElseThrow(() ->
-                    new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email)));
-        } catch (ResourceNotFoundException e) {
-            throw new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email);
-        }
+        return usuarioConverter.paraUsuarioDTO(
+                usuarioRepository.findByEmail(email)
+                        .orElseThrow(() -> new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email)));
+    }
+
+    public UsuarioDTOResponse buscarUsuarioAutenticado() {
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        return buscarUsuarioPorEmail(emailAutenticado);
     }
 
     public void deletarUsuarioPorEmail(String email) {
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!emailAutenticado.equals(email)) {
+            throw new UnauthorizedException("Sem permissão para deletar este usuário");
+        }
         usuarioRepository.deleteByEmail(email);
     }
 
@@ -97,15 +96,27 @@ public class UsuarioService {
     }
 
     public EnderecoDTOResponse atualizarEndereco(Long idEndereco, EnderecoDTOrequest enderecoDTOrequest) {
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + emailAutenticado));
         Endereco enderecoEntity = enderecoRepository.findById(idEndereco).orElseThrow(() ->
                 new ResourceNotFoundException("Endereco nao encontrado: " + idEndereco));
+        if (!usuario.getId().equals(enderecoEntity.getUsuarioId())) {
+            throw new UnauthorizedException("Sem permissão para alterar este endereço");
+        }
         Endereco endereco = usuarioConverter.updateEndereco(enderecoDTOrequest, enderecoEntity);
         return usuarioConverter.paraEnderecoDTO(enderecoRepository.save(endereco));
     }
 
     public TelefoneDTOResponse atualizarTelefone(Long idTelefone, TelefoneDTOrequest telefoneDTOrequest) {
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmail(emailAutenticado)
+                .orElseThrow(() -> new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + emailAutenticado));
         Telefone telefoneEntity = telefoneRepository.findById(idTelefone).orElseThrow(() ->
                 new ResourceNotFoundException("Telefone nao encontrado: " + idTelefone));
+        if (!usuario.getId().equals(telefoneEntity.getUsuarioId())) {
+            throw new UnauthorizedException("Sem permissão para alterar este telefone");
+        }
         Telefone telefone = usuarioConverter.updateTelefone(telefoneDTOrequest, telefoneEntity);
         return usuarioConverter.paraTelefoneDTO(telefoneRepository.save(telefone));
     }

@@ -5,10 +5,8 @@ import com.joaopaulo.usuario.infrastructure.business.dto.in.*;
 import com.joaopaulo.usuario.infrastructure.business.dto.out.EnderecoDTOResponse;
 import com.joaopaulo.usuario.infrastructure.business.dto.out.TelefoneDTOResponse;
 import com.joaopaulo.usuario.infrastructure.business.dto.out.UsuarioDTOResponse;
-import com.joaopaulo.usuario.infrastructure.clients.ViaCepClient;
 import com.joaopaulo.usuario.infrastructure.clients.dtos.out.CepDTOResponse;
 import com.joaopaulo.usuario.infrastructure.clients.services.ViaCepService;
-import com.joaopaulo.usuario.infrastructure.security.JwtUtil;
 import com.joaopaulo.usuario.infrastructure.security.SecurityConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,7 +14,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,10 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = SecurityConfig.SECURITY_SCHEME)
 public class UsuarioController {
     private final UsuarioService usuarioService;
-    private final ViaCepClient viaCepClient;
     private final ViaCepService viaCepService;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtutil;
 
     @PostMapping
     @Operation(summary = "Criar um novo usuário", description = "Endpoint para criar um novo usuário no sistema.")
@@ -50,9 +44,17 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.autenticarUsuario(loginDTORequest));
     }
 
+    @GetMapping("/me")
+    @Operation(summary = "Buscar dados do usuário autenticado", description = "Retorna os dados do usuário identificado pelo token JWT.")
+    @ApiResponse(responseCode = "200", description = "Usuário encontrado com sucesso")
+    @ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+    @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    public ResponseEntity<UsuarioDTOResponse> buscarUsuarioAutenticado() {
+        return ResponseEntity.ok(usuarioService.buscarUsuarioAutenticado());
+    }
+
     @GetMapping
-    @Operation(summary = "Buscar usuário por email", description = "Endpoint para buscar os dados de um usuário utilizando seu email" +
-            "extraido do token de acesso.")
+    @Operation(summary = "Buscar usuário por email", description = "Endpoint interno para buscar dados de um usuário pelo email.")
     @ApiResponse(responseCode = "200", description = "Usuário encontrado com sucesso")
     @ApiResponse(responseCode = "403", description = "Usuário não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
@@ -61,9 +63,9 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{email}")
-    @Operation(summary = "Deletar usuário por email", description = "Endpoint para deletar um usuário utilizando seu email " +
-            "extraido do token de acesso.")
+    @Operation(summary = "Deletar usuário por email", description = "Endpoint para deletar a conta do usuário autenticado.")
     @ApiResponse(responseCode = "200", description = "Usuário deletado com sucesso")
+    @ApiResponse(responseCode = "401", description = "Sem permissão para deletar este usuário")
     @ApiResponse(responseCode = "403", description = "Usuário não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     public ResponseEntity<Void> deletarUsuarioPorEmail(@PathVariable String email) {
@@ -82,9 +84,9 @@ public class UsuarioController {
     }
 
     @PutMapping("/endereco")
-    @Operation(summary = "Atualizar endereço do usuário", description = "Endpoint para atualizar o endereço de um usuário.")
+    @Operation(summary = "Atualizar endereço do usuário", description = "Endpoint para atualizar o endereço do usuário autenticado.")
     @ApiResponse(responseCode = "200", description = "Endereço do usuário atualizado com sucesso")
-    @ApiResponse(responseCode = "403", description = "Credenciais inválidas")
+    @ApiResponse(responseCode = "401", description = "Sem permissão para alterar este endereço")
     @ApiResponse(responseCode = "404", description = "Endereço não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     public ResponseEntity<EnderecoDTOResponse> autalizarEnderecoUsuario(@RequestBody EnderecoDTOrequest enderecoDTOrequest, @RequestParam("id") Long id) {
@@ -92,9 +94,9 @@ public class UsuarioController {
     }
 
     @PutMapping("/telefone")
-    @Operation(summary = "Atualizar telefone do usuário", description = "Endpoint para atualizar o telefone de um usuário.")
+    @Operation(summary = "Atualizar telefone do usuário", description = "Endpoint para atualizar o telefone do usuário autenticado.")
     @ApiResponse(responseCode = "200", description = "Telefone do usuário atualizado com sucesso")
-    @ApiResponse(responseCode = "403", description = "Credenciais inválidas")
+    @ApiResponse(responseCode = "401", description = "Sem permissão para alterar este telefone")
     @ApiResponse(responseCode = "404", description = "Telefone não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     public ResponseEntity<TelefoneDTOResponse> autalizarTelefoneUsuario(@RequestBody TelefoneDTOrequest telefoneDTOrequest, @RequestParam("id") Long idTelefone) {
