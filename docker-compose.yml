@@ -6,17 +6,18 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${posgres_db}
-      SPRING_DATASOURCE_USERNAME: ${posgres_user}
-      SPRING_DATASOURCE_PASSWORD: ${posgres_pass}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASS}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       - db
 
   db:
     image: postgres:latest
     environment:
-      POSTGRES_DB: ${posgres_user}
-      POSTGRES_USER: ${posgres_user}
-      POSTGRES_PASSWORD: ${posgres_pass}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
     ports:
       - "5432:5432"
