@@ -37,13 +37,19 @@ public class UsuarioService {
     private final JwtUtil jwtUtil;
     private final EnderecoRepository enderecoRepository;
     private final TelefoneRepository telefoneRepository;
+    private final VerificationService verificationService;
 
     public UsuarioDTOResponse salvarUsuario(UsuarioDTOrequest usuarioDTOrequest) {
         emailExiste(usuarioDTOrequest.getEmail());
         usuarioDTOrequest.setSenha(passwordEncoder.encode(usuarioDTOrequest.getSenha()));
 
         Usuario usuario = usuarioConverter.paraUsuarioEntity(usuarioDTOrequest);
-        return usuarioConverter.paraUsuarioDTO(usuarioRepository.save(usuario));
+        Usuario usuarioSalvo = java.util.Objects.requireNonNull(usuarioRepository.save(usuario));
+        
+        // Gera e envia código de verificação
+        verificationService.criarCodigoVerificacao(usuarioSalvo);
+        
+        return usuarioConverter.paraUsuarioDTO(usuarioSalvo);
     }
 
     public String autenticarUsuario(LoginDTORequest loginDTORequest) {
@@ -51,7 +57,8 @@ public class UsuarioService {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDTORequest.getEmail(), loginDTORequest.getSenha())
             );
-            return "Bearer " + jwtUtil.generateToken(authentication.getName());
+            boolean lembrarMe = loginDTORequest.getLembrarMe() != null && loginDTORequest.getLembrarMe();
+            return jwtUtil.generateToken(authentication.getName(), lembrarMe);
         }catch (BadCredentialsException | UsernameNotFoundException | AuthorizationDeniedException e){
             throw new UnauthorizedException("Credenciais invalidas", e.getCause());
         }
@@ -73,6 +80,11 @@ public class UsuarioService {
                         .orElseThrow(() -> new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email)));
     }
 
+    public Usuario buscarEntityPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email));
+    }
+
     public UsuarioDTOResponse buscarUsuarioAutenticado() {
         String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
         return buscarUsuarioPorEmail(emailAutenticado);
@@ -86,21 +98,45 @@ public class UsuarioService {
         usuarioRepository.deleteByEmail(email);
     }
 
+    public void desativarUsuario(String email) {
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!emailAutenticado.equals(email)) {
+            throw new UnauthorizedException("Sem permissão para desativar este usuário");
+        }
+        Usuario usuario = buscarEntityPorEmail(email);
+        usuario.setAtivo(false);
+        usuarioRepository.save(usuario);
+    }
+
     public UsuarioDTOResponse atualizaDadosUsuario(String token, UsuarioModDTOrequest usuarioModDTOrequest) {
-        String email = jwtUtil.extractUsername(token.substring(7));
+        String emailToken = jwtUtil.extractUsername(token.substring(7));
         usuarioModDTOrequest.setSenha(usuarioModDTOrequest.getSenha() != null ? passwordEncoder.encode(usuarioModDTOrequest.getSenha()) : null);
-        Usuario usuarioEntity = usuarioRepository.findByEmail(email).orElseThrow(() ->
-                new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email));
+        Usuario usuarioEntity = usuarioRepository.findByEmail(emailToken).orElseThrow(() ->
+                new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + emailToken));
+        
+        boolean emailAlterado = usuarioModDTOrequest.getEmail() != null && !usuarioModDTOrequest.getEmail().equals(usuarioEntity.getEmail());
+        
+        if (emailAlterado) {
+            emailExiste(usuarioModDTOrequest.getEmail()); // Verifica se o novo e-mail já está em uso
+            usuarioEntity.setVerificado(false);
+        }
+
         Usuario usuario = usuarioConverter.updateUsuario(usuarioModDTOrequest, usuarioEntity);
-        return usuarioConverter.paraUsuarioDTO(usuarioRepository.save(usuario));
+        Usuario usuarioAtualizado = java.util.Objects.requireNonNull(usuarioRepository.save(usuario));
+
+        if (emailAlterado) {
+            verificationService.criarCodigoVerificacao(usuarioAtualizado);
+        }
+
+        return usuarioConverter.paraUsuarioDTO(usuarioAtualizado);
     }
 
     public EnderecoDTOResponse atualizarEndereco(Long idEndereco, EnderecoDTOrequest enderecoDTOrequest) {
         String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByEmail(emailAutenticado)
                 .orElseThrow(() -> new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + emailAutenticado));
-        Endereco enderecoEntity = enderecoRepository.findById(idEndereco).orElseThrow(() ->
-                new ResourceNotFoundException("Endereco nao encontrado: " + idEndereco));
+        Endereco enderecoEntity = java.util.Objects.requireNonNull(enderecoRepository.findById(idEndereco).orElseThrow(() ->
+                new ResourceNotFoundException("Endereco nao encontrado: " + idEndereco)));
         if (!usuario.getId().equals(enderecoEntity.getUsuarioId())) {
             throw new UnauthorizedException("Sem permissão para alterar este endereço");
         }
@@ -112,8 +148,8 @@ public class UsuarioService {
         String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByEmail(emailAutenticado)
                 .orElseThrow(() -> new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + emailAutenticado));
-        Telefone telefoneEntity = telefoneRepository.findById(idTelefone).orElseThrow(() ->
-                new ResourceNotFoundException("Telefone nao encontrado: " + idTelefone));
+        Telefone telefoneEntity = java.util.Objects.requireNonNull(telefoneRepository.findById(idTelefone).orElseThrow(() ->
+                new ResourceNotFoundException("Telefone nao encontrado: " + idTelefone)));
         if (!usuario.getId().equals(telefoneEntity.getUsuarioId())) {
             throw new UnauthorizedException("Sem permissão para alterar este telefone");
         }
@@ -126,7 +162,8 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow(() ->
                 new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email));
         Endereco endereco = usuarioConverter.paraEnderecoEntity(enderecoDTOrequest, usuario.getId());
-        return usuarioConverter.paraEnderecoDTO(enderecoRepository.save(endereco));
+        Endereco enderecoSalvo = java.util.Objects.requireNonNull(enderecoRepository.save(endereco));
+        return usuarioConverter.paraEnderecoDTO(enderecoSalvo);
     }
 
     public TelefoneDTOResponse cadastrarTelefone(String token, TelefoneDTOrequest telefoneDTOrequest) {
@@ -134,6 +171,7 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow(() ->
                 new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + email));
         Telefone endereco = usuarioConverter.paraTelefoneEntity(telefoneDTOrequest, usuario.getId());
-        return usuarioConverter.paraTelefoneDTO(telefoneRepository.save(endereco));
+        Telefone telefoneSalvo = java.util.Objects.requireNonNull(telefoneRepository.save(endereco));
+        return usuarioConverter.paraTelefoneDTO(telefoneSalvo);
     }
 }

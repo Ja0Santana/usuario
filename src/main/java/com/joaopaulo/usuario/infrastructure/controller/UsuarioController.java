@@ -8,6 +8,7 @@ import com.joaopaulo.usuario.infrastructure.business.dto.out.UsuarioDTOResponse;
 import com.joaopaulo.usuario.infrastructure.clients.dtos.out.CepDTOResponse;
 import com.joaopaulo.usuario.infrastructure.clients.services.ViaCepService;
 import com.joaopaulo.usuario.infrastructure.security.SecurityConfig;
+import com.joaopaulo.usuario.infrastructure.business.VerificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class UsuarioController {
     private final UsuarioService usuarioService;
     private final ViaCepService viaCepService;
+    private final VerificationService verificationService;
 
     @PostMapping
     @Operation(summary = "Criar um novo usuário", description = "Endpoint para criar um novo usuário no sistema.")
@@ -131,5 +133,34 @@ public class UsuarioController {
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     public ResponseEntity<CepDTOResponse> buscarDadosDeEnderecoPorCep(@PathVariable("cep") String cep) {
         return ResponseEntity.ok(viaCepService.buscarDadosDeEnderecoPorCep(cep));
+    }
+
+    @PostMapping("/verificar")
+    @Operation(summary = "Verificar e-mail do usuário", description = "Endpoint para validar o código de 6 dígitos enviado por e-mail.")
+    @ApiResponse(responseCode = "200", description = "E-mail verificado com sucesso")
+    @ApiResponse(responseCode = "400", description = "Código inválido ou expirado")
+    public ResponseEntity<Void> verificarEmail(@RequestBody VerificationDTORequest verificationDTORequest) {
+        verificationService.validarCodigo(verificationDTORequest.getEmail(), verificationDTORequest.getCodigo());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/desativar-conta")
+    @Operation(summary = "Desativar conta do usuário", description = "Desativa logicamente a conta após validação OTP de segunda etapa.")
+    @ApiResponse(responseCode = "200", description = "Conta desativada com sucesso")
+    @ApiResponse(responseCode = "400", description = "Código inválido ou expirado")
+    @ApiResponse(responseCode = "401", description = "Sem permissão")
+    public ResponseEntity<Void> desativarConta(@RequestBody VerificationDTORequest verificationDTORequest) {
+        verificationService.validarCodigo(verificationDTORequest.getEmail(), verificationDTORequest.getCodigo());
+        usuarioService.desativarUsuario(verificationDTORequest.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reenviar-codigo")
+    @Operation(summary = "Reenviar código de verificação", description = "Endpoint para gerar e enviar um novo código de verificação para o e-mail informado.")
+    @ApiResponse(responseCode = "200", description = "Novo código enviado com sucesso")
+    @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    public ResponseEntity<Void> reenviarCodigo(@RequestParam("email") String email) {
+        verificationService.criarCodigoVerificacao(usuarioService.buscarEntityPorEmail(email)); 
+        return ResponseEntity.ok().build();
     }
 }

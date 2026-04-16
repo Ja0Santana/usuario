@@ -32,6 +32,16 @@ public class Usuario implements UserDetails {
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "usuario_id",  referencedColumnName = "id")
     private List<Telefone> telefones;
+    @Column(name = "foto_url")
+    private String fotoUrl;
+
+    @Builder.Default
+    @Column(name = "verificado")
+    private boolean verificado = false;
+
+    @Builder.Default
+    @Column(name = "ativo", columnDefinition = "boolean default true")
+    private Boolean ativo = true;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

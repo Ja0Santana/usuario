@@ -14,4 +14,5 @@ public class UsuarioDTOrequest {
     private String senha;
     private List<EnderecoDTOrequest> enderecos;
     private List<TelefoneDTOrequest> telefones;
+    private String fotoUrl;
 }

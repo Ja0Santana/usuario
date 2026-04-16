@@ -21,28 +21,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-// Define a classe JwtRequestFilter, que estende OncePerRequestFilter
 public class JwtRequestFilter extends OncePerRequestFilter {
 
-    // Define propriedades para armazenar instâncias de JwtUtil e UserDetailsService
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
 
-    // Construtor que inicializa as propriedades com instâncias fornecidas
     public JwtRequestFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
     }
 
-    // Método chamado uma vez por requisição para processar o filtro
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request, 
+                                    @org.springframework.lang.NonNull HttpServletResponse response, 
+                                    @org.springframework.lang.NonNull FilterChain chain)
             throws ServletException, IOException {
         try {
             final String authorizationHeader = request.getHeader("Authorization");
 
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-                final String token = authorizationHeader.substring(7);
+                final String token = authorizationHeader.substring(7).trim();
                 final String username = jwtUtil.extractUsername(token);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
