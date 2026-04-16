@@ -7,8 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoginDTORequest {
+public class VerificationDTORequest {
     private String email;
-    private String senha;
-    private Boolean lembrarMe;
+    private String codigo;
 }

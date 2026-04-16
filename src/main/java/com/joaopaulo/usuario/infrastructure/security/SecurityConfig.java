@@ -25,23 +25,21 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     public static final String SECURITY_SCHEME = "BearerAuth";
 
-    // Instâncias de JwtUtil e UserDetailsService injetadas pelo Spring
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
 
-    // Construtor para injeção de dependências de JwtUtil e UserDetailsService
     @Autowired
     public SecurityConfig(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
     }
 
-    // Configuração do filtro de segurança
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         JwtRequestFilter jwtRequestFilter = new JwtRequestFilter(jwtUtil, userDetailsService);
 
         http
+                // Disabling CSRF protection as we use JWT (Stateless API) and no cookies are used for authentication.
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/usuario/endereco/**").permitAll()
@@ -59,17 +57,13 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Configura o PasswordEncoder para criptografar senhas usando BCrypt
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Retorna uma instância de BCryptPasswordEncoder
+        return new BCryptPasswordEncoder();
     }
 
-    // Configura o AuthenticationManager usando AuthenticationConfiguration
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        // Obtém e retorna o AuthenticationManager da configuração de autenticação
         return authenticationConfiguration.getAuthenticationManager();
     }
-
 }

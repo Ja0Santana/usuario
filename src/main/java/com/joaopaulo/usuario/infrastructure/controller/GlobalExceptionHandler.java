@@ -1,5 +1,6 @@
 package com.joaopaulo.usuario.infrastructure.controller;
 
+import com.joaopaulo.usuario.infrastructure.exceptions.BusinessException;
 import com.joaopaulo.usuario.infrastructure.exceptions.ConflictException;
 import com.joaopaulo.usuario.infrastructure.exceptions.IllegalArgumentException;
 import com.joaopaulo.usuario.infrastructure.exceptions.ResourceNotFoundException;
@@ -41,6 +42,15 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI(),
                 HttpStatus.UNAUTHORIZED.getReasonPhrase()));
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException ex,
+                                                                    HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(builderError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                request.getRequestURI(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

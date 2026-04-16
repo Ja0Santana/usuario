@@ -13,4 +13,6 @@ public class UsuarioDTOResponse {
     private String email;
     private List<EnderecoDTOResponse> enderecos;
     private List<TelefoneDTOResponse> telefones;
+    private String fotoUrl;
+    private boolean verificado;
 }
