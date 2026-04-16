@@ -10,14 +10,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JwtUtilTest {
 
     private JwtUtil jwtUtil;
-    // Chave Base64 válida (min 256 bits)
-    private final String secretKey = "c3VhLWNoYXZlLXNlY3JldGEtZGUtdGVzdGUtYmVtLWxvbmdhLWNvbS0zMi1vdS1tYWlzLWNhcmFjdGVyZXM=";
 
     @BeforeEach
     void setUp() {
         jwtUtil = new JwtUtil();
+        
+        // Gera uma chave segura dinâmica para o teste (HS256 necessita de 256 bits)
+        javax.crypto.SecretKey key = io.jsonwebtoken.Jwts.SIG.HS256.key().build();
+        String dynamicSecret = java.util.Base64.getEncoder().encodeToString(key.getEncoded());
+        
         // Injeta a chave secreta no campo privado usando ReflectionTestUtils
-        ReflectionTestUtils.setField(jwtUtil, "secretKey", secretKey);
+        ReflectionTestUtils.setField(jwtUtil, "secretKey", dynamicSecret);
     }
 
     @Test
