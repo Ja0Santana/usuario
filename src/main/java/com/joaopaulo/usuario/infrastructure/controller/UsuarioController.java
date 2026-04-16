@@ -156,11 +156,12 @@ public class UsuarioController {
     }
 
     @PostMapping("/reenviar-codigo")
-    @Operation(summary = "Reenviar código de verificação", description = "Endpoint para gerar e enviar um novo código de verificação para o e-mail informado.")
+    @Operation(summary = "Reenviar código de verificação", description = "Endpoint para gerar e enviar um novo código de verificação para o e-mail do usuário autenticado.")
     @ApiResponse(responseCode = "200", description = "Novo código enviado com sucesso")
     @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
-    public ResponseEntity<Void> reenviarCodigo(@RequestParam("email") String email) {
-        verificationService.criarCodigoVerificacao(usuarioService.buscarEntityPorEmail(email)); 
+    public ResponseEntity<Void> reenviarCodigo() {
+        String emailAutenticado = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        verificationService.criarCodigoVerificacao(usuarioService.buscarEntityPorEmail(emailAutenticado));
         return ResponseEntity.ok().build();
     }
 }

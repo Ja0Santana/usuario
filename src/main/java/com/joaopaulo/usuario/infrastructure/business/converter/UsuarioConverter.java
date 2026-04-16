@@ -66,7 +66,6 @@ public class UsuarioConverter {
         return UsuarioDTOResponse.builder()
                 .nome(usuario.getNome())
                 .email(usuario.getEmail())
-                .senha(usuario.getSenha())
                 .enderecos(paraListaEnderecoDTO(usuario.getEnderecos()))
                 .telefones(paraListaTelefonesDTO(usuario.getTelefones()))
                 .fotoUrl(usuario.getFotoUrl())
@@ -114,6 +113,8 @@ public class UsuarioConverter {
                 .fotoUrl(usuarioModDTOrequest.getFotoUrl() != null ? usuarioModDTOrequest.getFotoUrl() : usuarioEntity.getFotoUrl())
                 .enderecos(usuarioEntity.getEnderecos())
                 .telefones(usuarioEntity.getTelefones())
+                .verificado(usuarioEntity.isVerificado())
+                .ativo(usuarioEntity.getAtivo())
                 .build();
     }
 

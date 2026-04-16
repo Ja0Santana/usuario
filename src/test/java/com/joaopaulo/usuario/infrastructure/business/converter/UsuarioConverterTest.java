@@ -118,6 +118,24 @@ class UsuarioConverterTest {
     }
 
     @Test
+    @DisplayName("Deve atualizar usuario preservando status verificado e ativo")
+    void deveAtualizarUsuarioPreservandoStatus() {
+        Usuario entityOriginal = Usuario.builder()
+                .verificado(true)
+                .ativo(false)
+                .build();
+
+        UsuarioModDTOrequest modDTO = UsuarioModDTOrequest.builder()
+                .nome("Novo Nome")
+                .build();
+
+        Usuario entityAtualizada = usuarioConverter.updateUsuario(modDTO, entityOriginal);
+
+        assertThat(entityAtualizada.isVerificado()).isTrue();
+        assertThat(entityAtualizada.getAtivo()).isFalse();
+    }
+
+    @Test
     @DisplayName("Deve atualizar endereco preservando ID e usuarioId")
     void deveAtualizarEnderecoComSucesso() {
         Endereco entityOriginal = Endereco.builder()

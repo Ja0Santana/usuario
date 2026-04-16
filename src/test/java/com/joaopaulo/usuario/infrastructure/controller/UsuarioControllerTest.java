@@ -14,6 +14,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,8 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = UsuarioController.class,
-            excludeAutoConfiguration = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
+@WebMvcTest(controllers = UsuarioController.class)
+@WithMockUser
 class UsuarioControllerTest {
 
     @Autowired
@@ -46,7 +48,8 @@ class UsuarioControllerTest {
         UsuarioDTOrequest request = new UsuarioDTOrequest();
         mockMvc.perform(post("/usuario")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isOk());
         verify(usuarioService).salvarUsuario(any());
     }
@@ -57,7 +60,8 @@ class UsuarioControllerTest {
         LoginDTORequest request = new LoginDTORequest("email@test.com", "senha", false);
         mockMvc.perform(post("/usuario/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isOk());
         verify(usuarioService).autenticarUsuario(any());
     }
@@ -82,7 +86,8 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("Deve deletar usuário por email")
     void deveDeletarPorEmail() throws Exception {
-        mockMvc.perform(delete("/usuario/test@test.com"))
+        mockMvc.perform(delete("/usuario/test@test.com")
+                .with(csrf()))
                 .andExpect(status().isOk());
         verify(usuarioService).deletarUsuarioPorEmail("test@test.com");
     }
@@ -94,7 +99,8 @@ class UsuarioControllerTest {
         mockMvc.perform(put("/usuario")
                 .header("Authorization", "Bearer token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isOk());
         verify(usuarioService).atualizaDadosUsuario(eq("Bearer token"), any());
     }
@@ -106,7 +112,8 @@ class UsuarioControllerTest {
         mockMvc.perform(put("/usuario/endereco")
                 .param("id", "1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isOk());
         verify(usuarioService).atualizarEndereco(eq(1L), any());
     }
@@ -125,7 +132,8 @@ class UsuarioControllerTest {
         VerificationDTORequest request = new VerificationDTORequest("test@test.com", "123456");
         mockMvc.perform(post("/usuario/verificar")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isOk());
         verify(verificationService).validarCodigo("test@test.com", "123456");
     }
@@ -136,18 +144,21 @@ class UsuarioControllerTest {
         VerificationDTORequest request = new VerificationDTORequest("test@test.com", "123456");
         mockMvc.perform(post("/usuario/desativar-conta")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isOk());
         verify(verificationService).validarCodigo("test@test.com", "123456");
         verify(usuarioService).desativarUsuario("test@test.com");
     }
 
     @Test
-    @DisplayName("Deve reenviar código")
+    @WithMockUser(username = "test@test.com")
+    @DisplayName("Deve reenviar código para o usuário autenticado")
     void deveReenviarCodigo() throws Exception {
         mockMvc.perform(post("/usuario/reenviar-codigo")
-                .param("email", "test@test.com"))
+                .with(csrf()))
                 .andExpect(status().isOk());
+        verify(usuarioService).buscarEntityPorEmail("test@test.com");
         verify(verificationService).criarCodigoVerificacao(any());
     }
 }
