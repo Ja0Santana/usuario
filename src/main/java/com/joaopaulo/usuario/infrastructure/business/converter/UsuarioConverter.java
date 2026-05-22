@@ -27,6 +27,7 @@ public class UsuarioConverter {
                 .enderecos(paraListaEndereco(usuarioDTOrequest.getEnderecos()))
                 .telefones(paraListaTelefones(usuarioDTOrequest.getTelefones()))
                 .fotoUrl(usuarioDTOrequest.getFotoUrl())
+                .duploFatorAtivo(usuarioDTOrequest.isDuploFatorAtivo())
                 .build();
     }
 
@@ -70,6 +71,7 @@ public class UsuarioConverter {
                 .telefones(paraListaTelefonesDTO(usuario.getTelefones()))
                 .fotoUrl(usuario.getFotoUrl())
                 .verificado(usuario.isVerificado())
+                .duploFatorAtivo(usuario.isDuploFatorAtivo())
                 .build();
     }
 
@@ -115,6 +117,7 @@ public class UsuarioConverter {
                 .telefones(usuarioEntity.getTelefones())
                 .verificado(usuarioEntity.isVerificado())
                 .ativo(usuarioEntity.getAtivo())
+                .duploFatorAtivo(usuarioModDTOrequest.getDuploFatorAtivo() != null ? usuarioModDTOrequest.getDuploFatorAtivo() : usuarioEntity.isDuploFatorAtivo())
                 .build();
     }
 

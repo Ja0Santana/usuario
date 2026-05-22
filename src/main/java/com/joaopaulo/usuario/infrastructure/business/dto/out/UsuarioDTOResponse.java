@@ -15,4 +15,5 @@ public class UsuarioDTOResponse {
     private List<TelefoneDTOResponse> telefones;
     private String fotoUrl;
     private boolean verificado;
+    private boolean duploFatorAtivo;
 }

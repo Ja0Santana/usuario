@@ -23,12 +23,28 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.joaopaulo.usuario.infrastructure.utils.PasswordValidator;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import java.util.Collections;
+import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
+    @org.springframework.beans.factory.annotation.Value("${google.client-id}")
+    private String googleClientId;
+    private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
     private static final String EMAIL_NAO_ENCONTRADO = "Email nao encontrado: ";
     private final UsuarioRepository usuarioRepository;
     private final UsuarioConverter usuarioConverter;
@@ -41,9 +57,12 @@ public class UsuarioService {
 
     public UsuarioDTOResponse salvarUsuario(UsuarioDTOrequest usuarioDTOrequest) {
         emailExiste(usuarioDTOrequest.getEmail());
+        PasswordValidator.validate(usuarioDTOrequest.getSenha());
         usuarioDTOrequest.setSenha(passwordEncoder.encode(usuarioDTOrequest.getSenha()));
 
+
         Usuario usuario = usuarioConverter.paraUsuarioEntity(usuarioDTOrequest);
+        usuario.setAtivo(true);
         Usuario usuarioSalvo = java.util.Objects.requireNonNull(usuarioRepository.save(usuario));
         
         // Gera e envia código de verificação
@@ -53,14 +72,26 @@ public class UsuarioService {
     }
 
     public String autenticarUsuario(LoginDTORequest loginDTORequest) {
+        System.out.println("DEBUG - UsuarioService.autenticarUsuario - Email: " + loginDTORequest.getEmail());
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDTORequest.getEmail(), loginDTORequest.getSenha())
             );
+            System.out.println("DEBUG - Autenticação bem sucedida para: " + loginDTORequest.getEmail());
             boolean lembrarMe = loginDTORequest.getLembrarMe() != null && loginDTORequest.getLembrarMe();
             return jwtUtil.generateToken(authentication.getName(), lembrarMe);
-        }catch (BadCredentialsException | UsernameNotFoundException | AuthorizationDeniedException e){
-            throw new UnauthorizedException("Credenciais invalidas", e.getCause());
+        } catch (BadCredentialsException e) {
+            System.err.println("DEBUG - Erro de senha para: " + loginDTORequest.getEmail());
+            logger.error("Falha no login para o email {}: Senha incorreta", loginDTORequest.getEmail());
+            throw new UnauthorizedException("Credenciais invalidas", e);
+        } catch (UsernameNotFoundException e) {
+            System.err.println("DEBUG - Usuário não encontrado: " + loginDTORequest.getEmail());
+            logger.error("Falha no login: Email {} nao encontrado", loginDTORequest.getEmail());
+            throw new UnauthorizedException("Credenciais invalidas", e);
+        } catch (AuthenticationException e) {
+            System.err.println("DEBUG - Erro geral de autenticação para: " + loginDTORequest.getEmail() + " - " + e.getMessage());
+            logger.error("Falha na autenticacao para {}: {}", loginDTORequest.getEmail(), e.getMessage());
+            throw new UnauthorizedException("Erro na autenticacao: " + e.getMessage(), e);
         }
     }
 
@@ -110,7 +141,11 @@ public class UsuarioService {
 
     public UsuarioDTOResponse atualizaDadosUsuario(String token, UsuarioModDTOrequest usuarioModDTOrequest) {
         String emailToken = jwtUtil.extractUsername(token.substring(7));
-        usuarioModDTOrequest.setSenha(usuarioModDTOrequest.getSenha() != null ? passwordEncoder.encode(usuarioModDTOrequest.getSenha()) : null);
+        if (usuarioModDTOrequest.getSenha() != null) {
+            PasswordValidator.validate(usuarioModDTOrequest.getSenha());
+            usuarioModDTOrequest.setSenha(passwordEncoder.encode(usuarioModDTOrequest.getSenha()));
+        }
+
         Usuario usuarioEntity = usuarioRepository.findByEmail(emailToken).orElseThrow(() ->
                 new ResourceNotFoundException(EMAIL_NAO_ENCONTRADO + emailToken));
         
@@ -173,5 +208,59 @@ public class UsuarioService {
         Telefone endereco = usuarioConverter.paraTelefoneEntity(telefoneDTOrequest, usuario.getId());
         Telefone telefoneSalvo = java.util.Objects.requireNonNull(telefoneRepository.save(endereco));
         return usuarioConverter.paraTelefoneDTO(telefoneSalvo);
+    }
+
+    public void solicitarRecuperacaoSenha(String email) {
+        Usuario usuario = buscarEntityPorEmail(email);
+        verificationService.criarCodigoRecuperacao(usuario);
+    }
+
+    @Transactional
+    public void resetarSenha(ResetSenhaDTORequest resetSenhaDTORequest) {
+        Usuario usuario = buscarEntityPorEmail(resetSenhaDTORequest.getEmail());
+        verificationService.validarCodigoRecuperacao(resetSenhaDTORequest.getEmail(), resetSenhaDTORequest.getCodigo());
+        
+        PasswordValidator.validate(resetSenhaDTORequest.getNovaSenha());
+        usuario.setSenha(passwordEncoder.encode(resetSenhaDTORequest.getNovaSenha()));
+        usuarioRepository.save(usuario);
+    }
+
+    public String loginComGoogle(GoogleLoginDTORequest request) {
+        try {
+            NetHttpTransport transport = new NetHttpTransport();
+            GsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+            GoogleIdToken idToken = verifier.verify(request.getIdToken());
+            if (idToken == null) {
+                throw new UnauthorizedException("Token do Google invalido");
+            }
+            Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+            String pictureUrl = (String) payload.get("picture");
+            java.util.Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+            Usuario usuario;
+            if (usuarioOpt.isPresent()) {
+                usuario = usuarioOpt.get();
+                if (!usuario.getAtivo()) {
+                    throw new UnauthorizedException("Esta conta foi desativada");
+                }
+            } else {
+                usuario = new Usuario();
+                usuario.setEmail(email);
+                usuario.setNome(name);
+                usuario.setFotoUrl(pictureUrl);
+                usuario.setSenha(passwordEncoder.encode(UUID.randomUUID().toString()));
+                usuario.setAtivo(true);
+                usuario.setVerificado(true);
+                usuario = usuarioRepository.save(usuario);
+            }
+            boolean lembrarMe = request.getLembrarMe() != null && request.getLembrarMe();
+            return jwtUtil.generateToken(usuario.getEmail(), lembrarMe);
+        } catch (Exception e) {
+            throw new UnauthorizedException("Falha na autenticacao com Google: " + e.getMessage(), e);
+        }
     }
 }

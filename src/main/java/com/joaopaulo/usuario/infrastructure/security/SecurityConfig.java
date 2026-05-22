@@ -44,9 +44,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/usuario/endereco/**").permitAll()
                         .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/usuario/auth/google").permitAll()
                         .requestMatchers("/usuario/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/usuario").permitAll()
+                        .requestMatchers("/usuario/recuperar-senha", "/usuario/resetar-senha").permitAll()
                         .requestMatchers("/usuario/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

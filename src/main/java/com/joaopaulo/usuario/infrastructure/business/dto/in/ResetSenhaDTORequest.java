@@ -7,10 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsuarioModDTOrequest {
-    private String nome;
+public class ResetSenhaDTORequest {
     private String email;
-    private String senha;
-    private String fotoUrl;
-    private Boolean duploFatorAtivo;
+    private String codigo;
+    private String novaSenha;
 }

@@ -41,6 +41,24 @@ public class VerificationService {
     }
 
     @Transactional
+    public void criarCodigoRecuperacao(Usuario usuario) {
+        tokenRepository.deleteByUsuario(usuario);
+        tokenRepository.flush();
+
+        String code = String.format("%06d", secureRandom.nextInt(1000000));
+
+        VerificationToken verificationToken = VerificationToken.builder()
+                .token(code)
+                .usuario(usuario)
+                .dataExpiracao(LocalDateTime.now().plusMinutes(10))
+                .build();
+
+        tokenRepository.save(verificationToken);
+        
+        emailService.enviarEmailRecuperacaoSenha(usuario.getEmail(), code);
+    }
+
+    @Transactional
     public void validarCodigo(String email, String code) {
         VerificationToken verificationToken = tokenRepository.findByTokenAndUsuarioEmail(code, email)
                 .orElseThrow(() -> new UnauthorizedException("Código de verificação inválido ou e-mail incorreto."));
@@ -52,6 +70,18 @@ public class VerificationService {
         Usuario usuario = verificationToken.getUsuario();
         usuario.setVerificado(true);
         usuarioRepository.save(usuario);
+
+        tokenRepository.delete(verificationToken);
+    }
+
+    @Transactional
+    public void validarCodigoRecuperacao(String email, String code) {
+        VerificationToken verificationToken = tokenRepository.findByTokenAndUsuarioEmail(code, email)
+                .orElseThrow(() -> new UnauthorizedException("Código de recuperação inválido ou e-mail incorreto."));
+
+        if (verificationToken.isExpirado()) {
+            throw new EmailVerificationException("Código de recuperação expirado.");
+        }
 
         tokenRepository.delete(verificationToken);
     }

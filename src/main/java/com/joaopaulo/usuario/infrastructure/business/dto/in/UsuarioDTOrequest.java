@@ -15,4 +15,5 @@ public class UsuarioDTOrequest {
     private List<EnderecoDTOrequest> enderecos;
     private List<TelefoneDTOrequest> telefones;
     private String fotoUrl;
+    private boolean duploFatorAtivo;
 }

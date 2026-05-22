@@ -43,7 +43,17 @@ public class UsuarioController {
     @ApiResponse(responseCode = "403", description = "Usuário não encontrado")
     @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     public ResponseEntity<String> login(@RequestBody LoginDTORequest loginDTORequest) {
+        System.out.println("DEBUG - UsuarioController.login - Tentativa de login para: " + (loginDTORequest != null ? loginDTORequest.getEmail() : "null"));
         return ResponseEntity.ok(usuarioService.autenticarUsuario(loginDTORequest));
+    }
+
+    @PostMapping("/auth/google")
+    @Operation(summary = "Login/Cadastro via Google OAuth2", description = "Autentica ou cadastra o usuário de forma transparente a partir do ID Token do Google.")
+    @ApiResponse(responseCode = "200", description = "Autenticado com sucesso")
+    @ApiResponse(responseCode = "401", description = "Token do Google inválido ou expirado")
+    @ApiResponse(responseCode = "403", description = "Conta desativada")
+    public ResponseEntity<String> loginComGoogle(@RequestBody GoogleLoginDTORequest googleLoginDTORequest) {
+        return ResponseEntity.ok(usuarioService.loginComGoogle(googleLoginDTORequest));
     }
 
     @GetMapping("/me")
@@ -164,4 +174,24 @@ public class UsuarioController {
         verificationService.criarCodigoVerificacao(usuarioService.buscarEntityPorEmail(emailAutenticado));
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/recuperar-senha")
+    @Operation(summary = "Solicitar recuperação de senha", description = "Endpoint para solicitar o envio de um código de recuperação de senha por e-mail.")
+    @ApiResponse(responseCode = "200", description = "Código de recuperação enviado com sucesso")
+    @ApiResponse(responseCode = "404", description = "E-mail não encontrado")
+    public ResponseEntity<Void> solicitarRecuperacaoSenha(@RequestParam("email") String email) {
+        usuarioService.solicitarRecuperacaoSenha(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/resetar-senha")
+    @Operation(summary = "Resetar senha do usuário", description = "Endpoint para definir uma nova senha utilizando o código de recuperação enviado por e-mail.")
+    @ApiResponse(responseCode = "200", description = "Senha resetada com sucesso")
+    @ApiResponse(responseCode = "400", description = "Código inválido ou senha fraca")
+    @ApiResponse(responseCode = "404", description = "E-mail não encontrado")
+    public ResponseEntity<Void> resetarSenha(@RequestBody ResetSenhaDTORequest resetSenhaDTORequest) {
+        usuarioService.resetarSenha(resetSenhaDTORequest);
+        return ResponseEntity.ok().build();
+    }
 }
+

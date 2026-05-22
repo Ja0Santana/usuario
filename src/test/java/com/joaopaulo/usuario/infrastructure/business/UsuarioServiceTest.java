@@ -66,19 +66,20 @@ class UsuarioServiceTest {
     void deveSalvarUsuarioComSucesso() {
         UsuarioDTOrequest request = UsuarioDTOrequest.builder()
                 .email("novo@email.com")
-                .senha("senha123")
+                .senha("Senha@123")
                 .build();
         
         Usuario usuarioEntity = Usuario.builder().email("novo@email.com").build();
         
         when(usuarioRepository.existsByEmail(any())).thenReturn(false);
-        when(passwordEncoder.encode("senha123")).thenReturn("hash123");
+        when(passwordEncoder.encode("Senha@123")).thenReturn("hash123");
         when(usuarioConverter.paraUsuarioEntity(request)).thenReturn(usuarioEntity);
         when(usuarioRepository.save(any())).thenReturn(usuarioEntity);
 
         usuarioService.salvarUsuario(request);
 
-        verify(passwordEncoder).encode("senha123");
+        verify(passwordEncoder).encode("Senha@123");
+
         verify(usuarioRepository).save(usuarioEntity);
         verify(verificationService).criarCodigoVerificacao(usuarioEntity);
     }

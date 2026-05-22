@@ -38,6 +38,10 @@ public class Usuario implements UserDetails {
     @Builder.Default
     @Column(name = "verificado")
     private boolean verificado = false;
+    
+    @Builder.Default
+    @Column(name = "duplo_fator_ativo")
+    private boolean duploFatorAtivo = false;
 
     @Builder.Default
     @Column(name = "ativo", columnDefinition = "boolean default true")

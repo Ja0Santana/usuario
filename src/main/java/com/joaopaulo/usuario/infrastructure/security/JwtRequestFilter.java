@@ -16,6 +16,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.time.LocalDateTime;
 
 public class JwtRequestFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtRequestFilter.class);
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
 
@@ -32,23 +35,31 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request, 
-                                    @org.springframework.lang.NonNull HttpServletResponse response, 
-                                    @org.springframework.lang.NonNull FilterChain chain)
+    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request,
+            @org.springframework.lang.NonNull HttpServletResponse response,
+            @org.springframework.lang.NonNull FilterChain chain)
             throws ServletException, IOException {
         try {
             final String authorizationHeader = request.getHeader("Authorization");
+            System.out.println("DEBUG - JwtRequestFilter - URI: " + request.getRequestURI());
+            System.out.println("DEBUG - JwtRequestFilter - Authorization Header: "
+                    + (authorizationHeader != null ? "Presente (Bearer ...)" : "Ausente"));
 
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                 final String token = authorizationHeader.substring(7).trim();
                 final String username = jwtUtil.extractUsername(token);
+                System.out.println("DEBUG - JwtRequestFilter - Usuário extraído do token: " + username);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    if (jwtUtil.validateToken(token, username)) {
+                    boolean isValid = jwtUtil.validateToken(token, username);
+                    System.out.println("DEBUG - JwtRequestFilter - Token é válido? " + isValid);
+
+                    if (isValid) {
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities());
                         SecurityContextHolder.getContext().setAuthentication(authentication);
+                        System.out.println("DEBUG - JwtRequestFilter - Autenticação configurada no ContextHolder");
                     }
                 }
             }
@@ -76,9 +87,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        try{
+        try {
             return objectMapper.writeValueAsString(errorResponseDTO);
-        }catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             throw new JsonConversionException("Erro ao converter objeto de erro para JSON", e.getCause());
         }
     }
